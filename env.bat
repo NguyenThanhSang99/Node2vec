@@ -1,0 +1,1 @@
+call Node2vec/Scripts/activate
