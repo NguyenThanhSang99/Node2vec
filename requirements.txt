@@ -1,3 +1,5 @@
 numpy
 networkx
-gensim
+pandas
+tqdm
+matplotlib

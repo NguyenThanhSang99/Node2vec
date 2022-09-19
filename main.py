@@ -1,40 +1,83 @@
+import networkx as nx
 import numpy as np
-import node2vec 
-import networkx as nx 
-from gensim.models import Word2Vec
+import pandas as pd
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
-def get_graph(path, directed):
-    print("Getting graph...")
-    graph = nx.read_edgelist(path, nodetype=int, create_using=nx.DiGraph())
-    for e in graph.edges():
-        graph[e[0]][e[1]]['weight'] = 1
+H = nx.read_gml('data/football.gml')
+A = nx.to_numpy_matrix(H , nodelist=H.nodes())
 
-    if not directed:
-        graph = graph.to_undirected()
-    
-    return graph
+def random_step(v, num_walk, p, q):
+    t = np.random.choice(pos_list(v)) 
 
-def run_embeddings_model(walks):
-    walks = [str(walk) for walk in walks]
-    model = Word2Vec(walks, vector_size=128, window=10, min_count=0, sg=1, workers=4, epochs=20)
-    return model
+    walk_list = [v]
+    for _ in range(num_walk):
+        x = next_choice(v, t, p, q)
+        walk_list.append(x)
+        v = x
+        t = v
+    return walk_list
+
+def next_choice(v, t, p, q):
+    positive = pos_list(v)
+    li = np.array([])
+    for pos in positive:
+        if pos == t:
+            li = np.append(li, 1 / p)
+        elif pos in pos_list(t):
+            li = np.append(li, 1)
+        else:
+            li = np.append(li, 1 / q)
+    prob = li / li.sum()
+    return np.random.choice(positive, 1, p=prob)[0]
+
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
+def pos_list(node):
+    return np.nonzero(A[node])[1]
+def neg_list(node):
+    return np.where(A[node]==0)[1]
+
+def node2vec(dim, num_epoch, length, lr, k, p, q, num_neg):
+    embed = np.random.random((A.shape[0], dim))
+    for epoch in range(num_epoch):
+        for v in np.arange(A.shape[0]):
+            walk = random_step(v, length - 1, p, q) 
+            for idx in range(length - k):
+                not_neg_list = np.append(walk[max(0, idx - k):idx + k], pos_list(walk[idx]))
+                neg_list = list(set(np.arange(A.shape[0])) - set(not_neg_list))
+                random_neg = np.random.choice(neg_list, num_neg, replace=False)
+                for pos in range(idx + 1, idx + k + 1):
+                    if walk[idx] != walk[pos]:
+                        pos_embed = embed[walk[pos]]
+                        embed[walk[idx]] -= lr * (sigmoid(np.dot(embed[walk[idx]], pos_embed)) - 1) * pos_embed
+
+                for neg in random_neg:
+                    neg_embed = embed[neg]
+                    embed[walk[idx]] -= lr * (sigmoid(np.dot(embed[walk[idx]], neg_embed))) * neg_embed
+    return embed
+embed = node2vec(dim=2,num_epoch=200,length=8,lr=0.01,
+                 k=2,p=2,q=2,num_neg=5)
 
 
-def main():
-    p = 1
-    q = 1
-    number_walks = 5
-    walk_lengths = 8
-    in_path = "data/data.edgelist"
-    out_path = "data/data.embeddings.npy"
-    directed = False
+def visualize(Emb):
+    Emb_df = pd.DataFrame(Emb)
+    Emb_df['Label'] = dict(H.nodes('value')).values()
+    Emb_df.loc[Emb_df.Label == 0, 'Color'] = '#F22F2F'
+    Emb_df.loc[Emb_df.Label == 1, 'Color'] = '#F5A913'
+    Emb_df.loc[Emb_df.Label == 2, 'Color'] = '#F5F513'
+    Emb_df.loc[Emb_df.Label == 3, 'Color'] = '#8BF513'
+    Emb_df.loc[Emb_df.Label == 4, 'Color'] = '#8DBA5A'
+    Emb_df.loc[Emb_df.Label == 5, 'Color'] = '#25FDFD'
+    Emb_df.loc[Emb_df.Label == 6, 'Color'] = '#25A7FD'
+    Emb_df.loc[Emb_df.Label == 7, 'Color'] = '#1273B3'
+    Emb_df.loc[Emb_df.Label == 8, 'Color'] = '#8E12B3'
+    Emb_df.loc[Emb_df.Label == 9, 'Color'] = '#EBCAF5'
+    Emb_df.loc[Emb_df.Label == 10, 'Color'] = '#D468C2'
+    Emb_df.loc[Emb_df.Label == 11, 'Color'] = '#1C090D'
+    plt.scatter(Emb_df[0], Emb_df[1], c=Emb_df['Color'])
+    return Emb_df
 
-    networkx_graph = get_graph(in_path, directed)
-    node2vec_graph = node2vec.Graph(networkx_graph, directed, p, q)
-    node2vec_graph.preprocess_transition_probs()
-    walks = node2vec_graph.simulate_walks(number_walks, walk_lengths)
-    model = run_embeddings_model(walks)
-    model.wv.save_word2vec_format(out_path)
-
-if __name__ == "__main__":
-	main()
+embedded = visualize(embed)
+plt.show()
+pd.DataFrame(embedded).to_csv('data/Football_embedded_node2vec.csv')
