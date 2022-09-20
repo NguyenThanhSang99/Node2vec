@@ -5,85 +5,85 @@ graph
   node
   [
     id 0
-    label "BrighamYoung"
+    label "Banana"
     value 7
   ]
   node
   [
     id 1
-    label "FloridaState"
+    label "Apple"
     value 0
   ]
   node
   [
     id 2
-    label "Iowa"
+    label "Lemon"
     value 2
   ]
   node
   [
     id 3
-    label "KansasState"
+    label "Bread"
     value 3
   ]
   node
   [
     id 4
-    label "NewMexico"
+    label "Milk"
     value 7
   ]
   node
   [
     id 5
-    label "TexasTech"
+    label "Car"
     value 3
   ]
   node
   [
     id 6
-    label "PennState"
+    label "Motorbike"
     value 2
   ]
   node
   [
     id 7
-    label "SouthernCalifornia"
+    label "Korea"
     value 8
   ]
   node
   [
     id 8
-    label "ArizonaState"
+    label "Vietnam"
     value 8
   ]
   node
   [
     id 9
-    label "SanDiegoState"
+    label "Asia"
     value 7
   ]
   node
   [
     id 10
-    label "Baylor"
+    label "Door"
     value 3
   ]
   node
   [
     id 11
-    label "NorthTexas"
+    label "Home"
     value 10
   ]
   node
   [
     id 12
-    label "NorthernIllinois"
+    label "Chicken"
     value 6
   ]
   node
   [
     id 13
-    label "Northwestern"
+    label "Cow"
     value 2
   ]
   node
